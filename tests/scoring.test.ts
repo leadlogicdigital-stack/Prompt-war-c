@@ -54,10 +54,19 @@ describe("scoreScreening", () => {
     const s = scoreScreening({ phq: [3, 3, 2], gad: [3, 3], pss: [4, 4, 4, 4] });
     expect(s.phq).toBe(6);
     expect(s.gad).toBe(6);
-    expect(s.pss).toBe(16);
+    expect(s.pss).toBe(8); // items 1 & 2 are reverse-scored (4-4=0 each)
     expect(s.phqFlag9).toBe(true);
     expect(s.depScreen).toBe(true);
     expect(s.anxScreen).toBe(true);
+  });
+
+  it("reverse-scores the positively-worded PSS items (indices 1 & 2)", () => {
+    // all "very often" (4): items 0,3 add 4; items 1,2 reverse to 0 → 8
+    expect(scoreScreening({ phq: [0, 0, 0], gad: [0, 0], pss: [4, 4, 4, 4] }).pss).toBe(8);
+    // all "never" (0): items 0,3 add 0; items 1,2 reverse to 4 → 8
+    expect(scoreScreening({ phq: [0, 0, 0], gad: [0, 0], pss: [0, 0, 0, 0] }).pss).toBe(8);
+    // max perceived stress: high on negatives, "never" on positives → 16
+    expect(scoreScreening({ phq: [0, 0, 0], gad: [0, 0], pss: [4, 0, 0, 4] }).pss).toBe(16);
   });
 
   it("ignores unanswered (-1) items and does not flag self-harm", () => {

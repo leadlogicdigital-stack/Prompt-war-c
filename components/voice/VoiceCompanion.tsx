@@ -1,123 +1,45 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, PhoneOff, Loader2, Mic } from "lucide-react";
 import { useSukoon } from "@/lib/store";
-import { detectCrisis } from "@/lib/safety/helplines";
 import { HelplineCard } from "@/components/safety/HelplineCard";
-import { examLabel, stressorLabels } from "@/lib/care/profile";
-import { RISK_META } from "@/lib/care/scoring";
-import { cn, uid } from "@/lib/utils";
+import { useVoiceSession, careVars, type VoiceMode } from "@/lib/voice/useVoiceSession";
+import { cn } from "@/lib/utils";
 
-type Mode = "idle" | "connecting" | "listening" | "speaking" | "error";
-interface Line {
-  id: string;
-  role: "user" | "ai";
-  text: string;
-}
+const STATUS: Record<VoiceMode, string> = {
+  idle: "Tap to talk with Sukoon",
+  connecting: "Connecting you…",
+  listening: "Listening — go ahead, I'm here",
+  speaking: "Sukoon is speaking…",
+  error: "Something went wrong",
+};
 
 export function VoiceCompanion() {
   const { state } = useSukoon();
   const cp = state.careProfile;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const convoRef = useRef<any>(null);
+  const { mode, lines, crisis, error, start, end } = useVoiceSession();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const [mode, setMode] = useState<Mode>("idle");
-  const [lines, setLines] = useState<Line[]>([]);
-  const [crisis, setCrisis] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      convoRef.current?.endSession?.();
-    };
-  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [lines.length]);
 
-  async function start() {
-    setErr(null);
-    setLines([]);
-    setCrisis(false);
-    setMode("connecting");
-    try {
-      const res = await fetch("/api/voice/token", { cache: "no-store" });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        setErr(
-          d.error === "voice_not_configured"
-            ? "Voice isn't switched on for this server yet."
-            : "I couldn't start the call just now. Try again in a moment?",
-        );
-        setMode("error");
-        return;
-      }
-      const { token } = await res.json();
-      const { Conversation } = await import("@elevenlabs/client");
-
-      const dynamicVariables: Record<string, string> = cp
-        ? {
-            nickname: cp.identity.nickname || "there",
-            exam: examLabel(cp.identity.exam),
-            stressors: stressorLabels(cp.stressors).join(", ") || "exam pressure",
-            risk_tier: RISK_META[cp.riskTier].label,
-          }
-        : {};
-
-      convoRef.current = await Conversation.startSession({
-        conversationToken: token,
-        connectionType: "webrtc",
-        dynamicVariables,
-        onConnect: () => setMode("listening"),
-        onDisconnect: () => setMode("idle"),
-        onModeChange: ({ mode: m }: { mode: string }) =>
-          setMode(m === "speaking" ? "speaking" : "listening"),
-        onMessage: ({ message, source }: { message: string; source: string }) => {
-          if (!message) return;
-          const role = source === "user" ? "user" : "ai";
-          setLines((p) => [...p, { id: uid("vl"), role, text: message }]);
-          if (role === "user" && detectCrisis(message)) setCrisis(true);
-        },
-        onError: () => {
-          setErr("Something interrupted the call.");
-          setMode("error");
-        },
-      });
-    } catch {
-      setErr("I need your microphone to talk. Please allow mic access and try again.");
-      setMode("error");
-    }
-  }
-
-  async function end() {
-    try {
-      await convoRef.current?.endSession?.();
-    } catch {
-      /* ignore */
-    }
-    convoRef.current = null;
-    setMode("idle");
+  function callSukoon() {
+    start({
+      ...careVars(cp),
+      situation: "a gentle check-in",
+      opening_line: "Take a slow breath with me — and tell me, how are you feeling right now?",
+    });
   }
 
   const live = mode === "listening" || mode === "speaking";
-  const statusText: Record<Mode, string> = {
-    idle: "Tap to talk with Sukoon",
-    connecting: "Connecting you…",
-    listening: "Listening — go ahead, I'm here",
-    speaking: "Sukoon is speaking…",
-    error: err ?? "Something went wrong",
-  };
 
   return (
     <div className="mx-auto flex h-full w-full max-w-md flex-col items-center px-5 py-6">
-      {/* orb */}
       <div className="relative flex flex-1 flex-col items-center justify-center">
         <div className="relative grid h-64 w-64 place-items-center">
-          {/* breathing aura */}
           <motion.div
             className="absolute h-64 w-64 rounded-full blur-2xl"
             style={{ backgroundImage: "linear-gradient(135deg, rgb(99 76 196), rgb(38 192 176))" }}
@@ -127,7 +49,6 @@ export function VoiceCompanion() {
             }}
             transition={{ duration: mode === "speaking" ? 1.1 : 5, repeat: Infinity, ease: "easeInOut" }}
           />
-          {/* speaking rings */}
           <AnimatePresence>
             {mode === "speaking" &&
               [0, 1, 2].map((i) => (
@@ -141,7 +62,6 @@ export function VoiceCompanion() {
                 />
               ))}
           </AnimatePresence>
-          {/* core */}
           <motion.div
             className="relative grid h-40 w-40 place-items-center rounded-full text-white shadow-glow"
             style={{ backgroundImage: "linear-gradient(135deg, rgb(99 76 196), rgb(38 192 176))" }}
@@ -156,16 +76,17 @@ export function VoiceCompanion() {
           </motion.div>
         </div>
 
-        <p className="mt-8 text-center font-display text-xl text-ink">{statusText[mode]}</p>
+        <p className="mt-8 text-center font-display text-xl text-ink">
+          {mode === "error" ? (error ?? STATUS.error) : STATUS[mode]}
+        </p>
         {cp && mode === "idle" && (
           <p className="mt-1.5 text-center text-sm text-muted">
             A calm voice call, just for you, {cp.identity.nickname}. No marks, no judgement.
           </p>
         )}
-        {err && <p className="mt-2 max-w-xs text-center text-sm text-alert">{err}</p>}
+        {error && <p className="mt-2 max-w-xs text-center text-sm text-alert">{error}</p>}
       </div>
 
-      {/* transcript */}
       {lines.length > 0 && (
         <div
           ref={scrollRef}
@@ -194,10 +115,9 @@ export function VoiceCompanion() {
         </div>
       )}
 
-      {/* controls */}
       <div className="w-full pb-2">
         {!live && mode !== "connecting" ? (
-          <button onClick={start} className="btn-primary w-full py-4 text-base">
+          <button onClick={callSukoon} className="btn-primary w-full py-4 text-base">
             <Phone className="h-5 w-5" /> Start the call
           </button>
         ) : (

@@ -60,7 +60,6 @@ export function fallbackReply(
 export function fallbackOpener(p: CareProfile, type: ProactiveType): string {
   const name = p.identity.nickname || "you";
   const exam = examLabel(p.identity.exam);
-  const stress = p.persona.stressorAwareness[0]?.toLowerCase();
 
   const openers: Record<ProactiveType, string[]> = {
     welcome: [
@@ -86,9 +85,5 @@ export function fallbackOpener(p: CareProfile, type: ProactiveType): string {
     ],
   };
 
-  const base = pick(openers[type], hash(p.id + type));
-  if (type === "trend_dip" && stress) {
-    return base;
-  }
-  return base;
+  return pick(openers[type], hash(p.id + type));
 }

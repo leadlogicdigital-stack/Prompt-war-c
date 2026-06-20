@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NavBar } from "@/components/app/NavBar";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { SosButton } from "@/components/sos/SosButton";
 import { useSukoon } from "@/lib/store";
 import { Mark } from "@/components/brand/Logo";
 
@@ -29,6 +30,7 @@ export default function DashboardPage() {
       <main>
         <Dashboard />
       </main>
+      <SosButton />
     </>
   );
 }

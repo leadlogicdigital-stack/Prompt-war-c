@@ -4,6 +4,7 @@ import type {
   SliderSnapshot,
   RiskTier,
 } from "@/lib/types";
+import { PSS_REVERSED } from "@/lib/onboarding/config";
 import { clamp } from "@/lib/utils";
 
 /**
@@ -27,7 +28,11 @@ export function scoreScreening(a: ScreeningAnswers): ScreeningScores {
   // phq = item0 (low mood) + item1 (anhedonia); item2 is the self-harm safety item
   const phq2 = sum(a.phq.slice(0, 2));
   const gad2 = sum(a.gad.slice(0, 2));
-  const pss = sum(a.pss);
+  // PSS-4: the positively-worded items (PSS_REVERSED) are reverse-scored (4 - v).
+  const pss = a.pss.reduce(
+    (acc, v, i) => (v < 0 ? acc : acc + (PSS_REVERSED.includes(i) ? 4 - v : v)),
+    0,
+  );
   const phqFlag9 = (a.phq[2] ?? 0) > 0;
   return {
     phq: phq2,
