@@ -7,7 +7,7 @@ import { Mark } from "@/components/brand/Logo";
 import { HelplineCard } from "@/components/safety/HelplineCard";
 import { useSukoon } from "@/lib/store";
 import { detectCrisis } from "@/lib/safety/helplines";
-import { cn, uid, timeAgo } from "@/lib/utils";
+import { cn, uid } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
 
 export function ChatView() {

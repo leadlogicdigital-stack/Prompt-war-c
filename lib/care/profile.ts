@@ -23,7 +23,6 @@ export function stressorLabels(ids: string[]): string[] {
 
 export function buildPersona(
   prefs: Preferences,
-  identity: Identity,
   tier: RiskTier,
   stressors: string[],
 ): PersonaConfig {
@@ -66,7 +65,7 @@ export function assembleCareProfile(input: AssembleInput): CareProfile {
   const scores = scoreScreening(input.screening);
   const index = wellnessIndex(input.baseline);
   const tier = deriveRiskTier(scores, index);
-  const persona = buildPersona(input.preferences, input.identity, tier, input.stressors);
+  const persona = buildPersona(input.preferences, tier, input.stressors);
 
   return {
     id: uid("care"),

@@ -66,12 +66,7 @@ describe("assembleCareProfile", () => {
 
 describe("buildPersona", () => {
   it("uses the chosen language and a coach tone with high pushiness when thriving", () => {
-    const persona = buildPersona(
-      { ...preferences, commStyle: "coach" },
-      identity,
-      "thriving",
-      ["parents"],
-    );
+    const persona = buildPersona({ ...preferences, commStyle: "coach" }, "thriving", ["parents"]);
     expect(persona.language).toBe("hinglish");
     expect(persona.pushiness).toBe("high");
     expect(persona.escalation).toBe("standard");

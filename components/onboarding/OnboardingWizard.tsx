@@ -33,7 +33,7 @@ import {
 } from "@/lib/onboarding/config";
 import { RISK_META } from "@/lib/care/scoring";
 import { useSukoon } from "@/lib/store";
-import { cn, uid } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type {
   AttemptStage,
   CareProfile,
