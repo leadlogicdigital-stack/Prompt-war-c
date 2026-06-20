@@ -8,7 +8,8 @@ import {
   Wind,
   Eye,
   RefreshCw,
-  Moon,
+  Activity,
+  Cloud,
   Sparkles,
   TrendingUp,
   Flame,
@@ -20,6 +21,10 @@ import { Mark } from "@/components/brand/Logo";
 import { Slider } from "@/components/ui/Slider";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { BreathingTool } from "@/components/dashboard/BreathingTool";
+import { GroundingTool } from "@/components/dashboard/GroundingTool";
+import { MuscleReleaseTool } from "@/components/dashboard/MuscleReleaseTool";
+import { ReframeTool } from "@/components/dashboard/ReframeTool";
+import { WorryParkTool } from "@/components/dashboard/WorryParkTool";
 import { useSukoon } from "@/lib/store";
 import { wellnessIndex, RISK_META } from "@/lib/care/scoring";
 import { examLabel } from "@/lib/care/profile";
@@ -48,8 +53,9 @@ export function Dashboard() {
     energy: baseSnap.energy,
   });
   const [saved, setSaved] = useState(false);
-  const [breathing, setBreathing] = useState(false);
-  const [tool, setTool] = useState<string | null>(null);
+  const [openTool, setOpenTool] = useState<
+    null | "breathing" | "grounding" | "pmr" | "reframe" | "worry"
+  >(null);
 
   const greeting = `Good ${partOfDay()}`;
   const pending = pendingProactive();
@@ -204,52 +210,43 @@ export function Dashboard() {
         <p className="mb-4 text-sm text-muted">
           Small resets, made for study breaks. They actually help — give one a minute.
         </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <ToolCard
             icon={<Wind className="h-5 w-5" />}
             title="Box breathing"
             desc="Calm a racing mind"
             hue="99 76 196"
-            onClick={() => {
-              setBreathing(true);
-              logCoping("breathing");
-            }}
+            onClick={() => setOpenTool("breathing")}
           />
           <ToolCard
             icon={<Eye className="h-5 w-5" />}
             title="5-4-3-2-1"
             desc="Ground a panic spike"
             hue="38 192 176"
-            onClick={() => toggleTool("grounding")}
-            active={tool === "grounding"}
+            onClick={() => setOpenTool("grounding")}
+          />
+          <ToolCard
+            icon={<Activity className="h-5 w-5" />}
+            title="Muscle release"
+            desc="Loosen body tension"
+            hue="162 130 230"
+            onClick={() => setOpenTool("pmr")}
           />
           <ToolCard
             icon={<RefreshCw className="h-5 w-5" />}
             title="Reframe"
             desc="Soften a harsh thought"
             hue="244 158 120"
-            onClick={() => toggleTool("reframe")}
-            active={tool === "reframe"}
+            onClick={() => setOpenTool("reframe")}
           />
           <ToolCard
-            icon={<Moon className="h-5 w-5" />}
-            title="Wind down"
-            desc="For racing-mind nights"
+            icon={<Cloud className="h-5 w-5" />}
+            title="Worry park"
+            desc="Set worries down"
             hue="122 150 235"
-            onClick={() => toggleTool("sleep")}
-            active={tool === "sleep"}
+            onClick={() => setOpenTool("worry")}
           />
         </div>
-
-        {tool && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="card mt-3 overflow-hidden p-5"
-          >
-            <p className="text-pretty leading-relaxed text-ink">{TOOL_TIPS[tool]}</p>
-          </motion.div>
-        )}
       </div>
 
       <p className="mt-10 text-center text-xs text-faint">
@@ -257,24 +254,34 @@ export function Dashboard() {
         Tele-MANAS <span className="font-semibold text-muted">14416</span> (24×7).
       </p>
 
-      <BreathingTool open={breathing} onClose={() => setBreathing(false)} onComplete={() => {}} />
+      <BreathingTool
+        open={openTool === "breathing"}
+        onClose={() => setOpenTool(null)}
+        onComplete={() => logCoping("breathing")}
+      />
+      <GroundingTool
+        open={openTool === "grounding"}
+        onClose={() => setOpenTool(null)}
+        onComplete={() => logCoping("grounding")}
+      />
+      <MuscleReleaseTool
+        open={openTool === "pmr"}
+        onClose={() => setOpenTool(null)}
+        onComplete={() => logCoping("muscle")}
+      />
+      <ReframeTool
+        open={openTool === "reframe"}
+        onClose={() => setOpenTool(null)}
+        onComplete={() => logCoping("reframe")}
+      />
+      <WorryParkTool
+        open={openTool === "worry"}
+        onClose={() => setOpenTool(null)}
+        onComplete={() => logCoping("worry")}
+      />
     </div>
   );
-
-  function toggleTool(t: string) {
-    setTool((cur) => (cur === t ? null : t));
-    if (tool !== t) logCoping(t);
-  }
 }
-
-const TOOL_TIPS: Record<string, string> = {
-  grounding:
-    "Look around and name them slowly: 5 things you can see, 4 you can hear, 3 you can touch, 2 you can smell, 1 you can taste. This pulls your brain out of the 'what-if' spiral and back into the room. You're safe right now.",
-  reframe:
-    "Catch the harsh thought (\"I'll never clear this\"). Now ask: would you say it to a friend? Rewrite it kinder and truer — \"This topic is hard today, and I can take it one question at a time.\" Same situation, less weight.",
-  sleep:
-    "Put the phone across the room. Slow your breathing — out longer than in. If your mind keeps revising the syllabus, write tomorrow's 3 tasks on paper so your brain can let go. Rest is part of the prep, not a betrayal of it.",
-};
 
 function Stat({
   icon,
@@ -313,22 +320,17 @@ function ToolCard({
   desc,
   hue,
   onClick,
-  active,
 }: {
   icon: React.ReactNode;
   title: string;
   desc: string;
   hue: string;
   onClick: () => void;
-  active?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className={cn(
-        "card group p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lift",
-        active && "ring-2 ring-primary/40",
-      )}
+      className="card group p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lift"
     >
       <span
         className="mb-3 grid h-10 w-10 place-items-center rounded-xl text-white"
