@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, MessageCircleHeart } from "lucide-react";
+import { Home, MessageCircleHeart, Phone } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/dashboard", label: "Today", icon: Home },
-  { href: "/chat", label: "Talk", icon: MessageCircleHeart },
+  { href: "/chat", label: "Chat", icon: MessageCircleHeart },
+  { href: "/voice", label: "Voice", icon: Phone },
 ];
 
 export function NavBar() {

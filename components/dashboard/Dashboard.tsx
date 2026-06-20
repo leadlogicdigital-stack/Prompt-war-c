@@ -14,6 +14,7 @@ import {
   Flame,
   CalendarClock,
   Check,
+  Phone,
 } from "lucide-react";
 import { Mark } from "@/components/brand/Logo";
 import { Slider } from "@/components/ui/Slider";
@@ -110,9 +111,14 @@ export function Dashboard() {
                 `I'm here whenever you need me, ${cp.identity.nickname}. Want to tell me how today's going?`}
             </p>
           </div>
-          <Link href="/chat" className="btn-primary shrink-0">
-            Reply <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <Link href="/voice" className="btn-soft" aria-label="Talk to Sukoon out loud">
+              <Phone className="h-4 w-4" /> Call
+            </Link>
+            <Link href="/chat" className="btn-primary">
+              Reply <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </motion.div>
 
